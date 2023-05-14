@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Calendar</title>
+  <style>
+    /* 스타일 코드 */
+    .container {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+
+    #calendar {
+      flex: 1;
+      max-width: 600px;
+    }
+
+    #weather-widget {
+      width: 30%;
+      background-color: rgb(6, 102, 228);
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+    }
+
+    #weather-icon {
+      width: 50px;
+      height: 50px;
+    }
+
+    #weather-text {
+      font-size: 16px;
+      font-weight: bold;
+    }
+
+    #weather-temperature {
+      font-size: 24px;
+    }
+
+    #news-container {
+      margin-top: 20px;
+    }
+
+    .news-article {
+      margin-bottom: 10px;
+    }
+
+    .news-title {
+      font-size: 18px;
+      font-weight: bold;
+    }
+
+    .news-description {
+      font-size: 14px;
+      color: rgba(255, 255, 255, 0);
+    }
+
+    .news-source {
+      font-size: 14px;
+      color: rgb(0, 0, 243);
+      text-decoration: underline;
+      cursor: pointer;
+    }
+  </style>
+  <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+  <link href="https://unpkg.com/fullcalendar@5/main.min.css" rel="stylesheet" />
+  <script src="https://unpkg.com/fullcalendar@5/main.min.js"></script>
+  <script src="https://unpkg.com/@fullcalendar/interaction@5/main.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/ical.js/1.4.0/ical.min.js"></script>
+</head>
+<body>
+  <div class="container">
+    <div id="calendar"></div>
+    <div id="weather-widget">
+      <div id="location"></div>
+      <div id="date"></div>
+      <div id="weather-info">
+        <img id="weather-icon" src="" alt="Weather Icon">
+        <div id="weather-text"></div>
+        <div id="weather-temperature"></div>
+      </div>
+      <div id="news-container"></div>
+    </div>
+  </div>
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 변수 초기화
+      const calendarEl = document.getElementById('calendar');
+      const newsContainerEl = document.getElementById('news-container');
+
+      // 뉴스 렌더링 함수
+      const renderNews = (articles) => {
+        const newsItems = articles.map((article) => createNewsItem(article));
+        newsContainerEl.innerHTML = newsItems.join('');
+      };
+
+      // 뉴스 항목 생성 함수
+      const createNewsItem = (article) => {
+        const { title, description, url, source } = article;
+        const newsItem = `<div class="news-article"> 
+          <div class="news-title">${title}</div> 
+          <div class="news-description">${description}</div> 
+          <a class="news-source" href="${url}" target="_blank">${source.name}</a>
+        </div>`;
+        return newsItem;
+      };
+
+      const fetchNews = () => {
+        const newsApiUrl = `https://newsapi.org/v2/top-headlines?country=kr&apiKey=194c3744cc844e4392ef1c3e4004a188`;
+
+        fetch(newsApiUrl)
+          .then((response) => response.json())
+          .then((data) => {
+            // 상위 5개의 기사만 가져오기
+            const topArticles = data.articles.slice(0, 5);
+            renderNews(topArticles);
+          })
+          .catch((error) => {
+            console.error('Failed to fetch news:', error);
+          });
+      };
+      // OpenWeather API 키
+      const apiKey = 'a4dcb3fcb156414de2302153d53e95e6';
+      // 위치 정보
+      const location = 'Seoul';
+
+      // API 호출 URL
+      const apiUrl = `https://api.openweathermap.org/data/2.5/weather?q=${location}&appid=${apiKey}&units=metric`;
+
+      // API 요청
+      $.getJSON(apiUrl, function(data) {
+        // 위치 표시
+        $('#location').text(data.name);
+        // 현재 날짜 표시
+        const currentDate = new Date();
+        const year = currentDate.getFullYear();
+        const month = currentDate.getMonth() + 1;
+        const day = currentDate.getDate();
+        const weekday = currentDate.toLocaleDateString('en-US', { weekday: 'long' });
+        $('#date')
+
+        // 날짜 표시
+        $('#date').text(`${year}년 ${month}월 ${day}일 ${weekday}`);
+
+        // 날씨 정보 표시
+        const weatherIcon = data.weather[0].icon;
+        const weatherDescription = data.weather[0].description;
+        const temperature = data.main.temp;
+
+        // 날씨 아이콘 표시
+        $('#weather-icon').attr('src', `http://openweathermap.org/img/w/${weatherIcon}.png`);
+
+        // 날씨 설명 표시
+        $('#weather-text').text(weatherDescription);
+
+        // 온도 표시
+        $('#weather-temperature').text(`${temperature}°C`);
+      });
+
+      fetch('http://localhost:3324/calendarrrr')
+        .then(response => response.text())
+        .then(data => {
+          const jcalData = ICAL.parse(data);
+          const comp = new ICAL.Component(jcalData);
+
+          const events = [];
+          const vevents = comp.getAllSubcomponents('vevent');
+          for (let i = 0; i < vevents.length; i++) {
+            const event = new ICAL.Event(vevents[i]);
+            events.push({
+              title: event.summary,
+              start: event.startDate.toString(),
+              end: event.endDate.toString()
+            });
+          }
+
+          const calendar = new FullCalendar.Calendar(calendarEl, {
+            initialView: 'dayGridMonth',
+            events: events,
+            dateClick: function(info) {
+              // 클릭 시 배경색이 빨간색이면 원래 색상으로, 그렇지 않으면 빨간색으로 변경
+              if (info.dayEl.style.backgroundColor === 'blue') {
+                info.dayEl.style.backgroundColor = '';  // 원래 색상으로 변경
+              } else {
+                info.dayEl.style.backgroundColor = 'blue';  // 빨간색으로 변경
+              }
+            },
+            titleFormat: { // title format
+              month: 'long', 
+              month: 'long', // like 'September'
+              year: 'numeric', // like '2009'
+              day: 'numeric' // like '13'
+            },
+            views: { // for different views
+              month: {
+                titleFormat: { year: 'numeric', month: 'long' }
+              },
+              week: {
+                titleFormat: { year: 'numeric', month: 'short', day: 'numeric' }
+              },
+              day: {
+                titleFormat: { year: 'numeric', month: 'long', day: 'numeric' }
+              }
+            }
+          });
+
+          calendar.render();
+        })
+        .catch(error => {
+          console.error('데이터 가져오기 실패:', error);
+        });
+
+      fetchNews();
+    });
+  </script>
+</body>
+</html>
