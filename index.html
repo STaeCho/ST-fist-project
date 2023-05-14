@@ -109,7 +109,8 @@
       };
 
       const fetchNews = () => {
-        const newsApiUrl = `https://newsapi.org/v2/top-headlines?country=kr&apiKey=194c3744cc844e4392ef1c3e4004a188`;
+        const newsApiUrl = `https://cors-anywhere.herokuapp.com/https://newsapi.org/v2/top-headlines?country=kr&apiKey=194c3744cc844e4392ef1c3e4004a188`;
+
 
         fetch(newsApiUrl)
           .then((response) => response.json())
